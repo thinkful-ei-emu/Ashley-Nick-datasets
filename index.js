@@ -1,27 +1,37 @@
 const express = require('express');
 const server = express();
 const morgan = require('morgan');
+const helmet = require('helmet');
+const cors = require('cors');
 const movies = require('./movies');
 server.use(morgan('dev'));
+server.use(helmet());
+server.use(cors());
 require('dotenv').config();
 
+server.use(function validateBearerToken(req, res, next) {
+  const apiToken = process.env.API_TOKEN;
+  const authToken = req.get('Authorization');
+
+  if (!authToken || authToken.split(' ')[1] !== apiToken) {
+    return res.status(401).json({ error: 'Unauthorized request' });
+  }
+  next();
+});
 
 function getGenre(arr){
   let newArr = arr.map(item => item['genre']);
   return newArr;
 }
+
 function getCountry(arr){
   let newArr = arr.map(item => item['country']);
   return newArr;
 }
-function getVotes(arr){
-  let newArr = arr.map(item => Number(item['avg_vote']));
-  return newArr;
-}
 
 let genreArr = getGenre(movies);
+
 let countryArr = getCountry(movies);
-let voteArr = getVotes(movies);
 
 
 server.get('/movie', (req, res) => {
